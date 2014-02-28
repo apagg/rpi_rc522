@@ -10,42 +10,42 @@ import time, datetime
 class PCD:
     """
     /////////////////////////////////////////////////////////////////////
-    //MF522命令字
+    //MF522 command word
     /////////////////////////////////////////////////////////////////////
     """
-    IDLE       = 0x00 #取消当前命令
+    IDLE       = 0x00 #NO action; cancel the current command
     MEM        = 0x01
-    AUTHENT    = 0x0E #验证密钥
-    RECEIVE    = 0x08 #接收数据
-    TRANSMIT   = 0x04 #发送数据
-    TRANSCEIVE = 0x0C #发送并接收数据
-    RESETPHASE = 0x0F #复位
-    CALCCRC    = 0x03 #CRC计算
+    AUTHENT    = 0x0E #authentication key
+    RECEIVE    = 0x08 #receive data
+    TRANSMIT   = 0x04 #Transmit Data
+    TRANSCEIVE = 0x0C #Send and receive data
+    RESETPHASE = 0x0F #Reset
+    CALCCRC    = 0x03 #CRC calculation
 
 class PICC:
     """
     /////////////////////////////////////////////////////////////////////
-    //Mifare_One卡片命令字
+    //Mifare_One card command word
     /////////////////////////////////////////////////////////////////////
     """
-    REQIDL    = 0x26 #寻天线区内未进入休眠状态
-    REQALL    = 0x52 #寻天线区内全部卡
-    ANTICOLL1 = 0x93 #防冲撞
-    ANTICOLL2 = 0x95 #防冲撞
-    AUTHENT1A = 0x60 #验证A密钥
-    AUTHENT1B = 0x61 #验证B密钥
-    READ      = 0x30 #读块
-    WRITE     = 0xA0 #写块
-    DECREMENT = 0xC0 #扣款
-    INCREMENT = 0xC1 #充值
-    RESTORE   = 0xC2 #调块数据到缓冲区
-    TRANSFER  = 0xB0 #保存缓冲区中数据
-    HALT      = 0x50 #休眠
+    REQIDL    = 0x26 #find the antenna area does not enter hibernation
+    REQALL    = 0x52 #find all the cards antenna area
+    ANTICOLL1 = 0x93 #anti-collision
+    ANTICOLL2 = 0x95 #Anti-collision
+    AUTHENT1A = 0x60 #authentication key A
+    AUTHENT1B = 0x61 #authentication key B
+    READ      = 0x30 #Read Block
+    WRITE     = 0xA0 #write block
+    DECREMENT = 0xC0 #debit?
+    INCREMENT = 0xC1 #recharge?
+    RESTORE   = 0xC2 #transfer block data to the buffer
+    TRANSFER  = 0xB0 #save the data in the buffer
+    HALT      = 0x50 #Sleep
 
 class MF522:
     """
     /////////////////////////////////////////////////////////////////////
-    //MF522寄存器定义
+    //MF522 register
     /////////////////////////////////////////////////////////////////////
     """
     # PAGE 0
@@ -125,23 +125,25 @@ class MF522:
 
 class Reader :
 
-    self.verbose = False
+    
 
     def __init__(self):
         self.spi = spidev.SpiDev()
 
+	self.verbose = False
+		
     def open(self, bus, device):
         self.spi.open(0,0)
         # spi.cshigh = True
         # spi.max_speed_hz = 488000
 
-    def wr(addr, val):
+    def wr(self, addr, val):
         a = ( ( addr << 1 ) & 0x7e )
         v = [a, val]
         if self.verbose:
             print '>>>' , self.hexf(v)
 
-        r = spi.xfer(v)
+        r = self.spi.xfer(v)
         if self.verbose:
             print '<<<' , self.hexf(r)
 
@@ -195,8 +197,9 @@ class Reader :
     
     
     def reset(self):
-    
-        print 'reset'
+		
+        if self.verbose:
+            print 'reset'
         self.wr(MF522.CommandReg, PCD.RESETPHASE)
     
         self.wr(MF522.ModeReg, 0x3d)
@@ -211,19 +214,24 @@ class Reader :
         self.wr(MF522.TxAutoReg, 0x40)
     
     def antennaOff(self):
-        print 'antenna off'
+        if self.verbose:
+            print 'antenna off'
         self.clearBitMask(MF522.TxControlReg, 0x03)
     
     def antennaOn(self):
-        print 'antenna on'
+        if self.verbose:
+            print 'antenna on'
         i = self.rd(MF522.TxControlReg)
         if(not(i & 0x03)) :
-            print 'set antenna on'
+            if self.verbose:
+                print 'set antenna on'
             self.setBitMask(MF522.TxControlReg, 0x03)
         # rd(MF522.TxControlReg)
     
     def configISOType(self):
-        print 'config type'
+		
+        if self.verbose:
+            print 'config type'
         self.clearBitMask(MF522.Status2Reg, 0x08)
         
         self.wr(MF522.ModeReg      , 0x3d)
@@ -412,7 +420,7 @@ if __name__ == '__main__' :
 
     while True:
         print 'run'
-        time.sleep(1)
+        #time.sleep(1)
     
         """
         selftest()
@@ -448,10 +456,10 @@ if __name__ == '__main__' :
             if card_no :
                 sel = reader.select_cmd(card_no)
                 print 'sel', sel
-        time.sleep(1)
+        #time.sleep(0.1)
     
         reader.antennaOff()
     
         print 'next...'
-        time.sleep(5)
+        #time.sleep(0.5)
 
